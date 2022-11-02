@@ -12,4 +12,7 @@ pub struct Cli {
     /// Authentication instance
     #[arg(short, long, default_value = "https://pipedapi.kavin.rocks")]
     pub instance: String,
+    /// Append videos to existing playlists
+    #[arg(long, default_value = "false")]
+    pub append: bool,
 }

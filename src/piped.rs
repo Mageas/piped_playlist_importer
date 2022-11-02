@@ -43,6 +43,19 @@ impl PipedClient {
         )?)
     }
 
+    /// Retrieve the videos from a playlist
+    pub async fn get_videos(&self, playlist_id: &str) -> PipedPlaylistImporterResult<Vec<String>> {
+        let url = format!("{}/playlists/{}", self.instance, playlist_id);
+        let response = self.get(&url).await?;
+        Ok(
+            serde_json::from_str::<PipedGetPlaylistInfosResponse>(&response)?
+                .related_streams
+                .iter()
+                .map(|s| s.url.split("?v=").nth(1).unwrap().to_owned())
+                .collect::<Vec<String>>(),
+        )
+    }
+
     /// Create a playlist
     pub async fn create_playlist(
         &self,
@@ -139,6 +152,17 @@ impl PipedClient {
 pub struct PipedGetPlaylistResponse {
     pub id: String,
     pub name: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PipedGetPlaylistInfosResponse {
+    related_streams: Vec<PipedGetVideoResponse>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PipedGetVideoResponse {
+    pub url: String,
 }
 
 #[derive(Debug, Deserialize)]

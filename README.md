@@ -14,6 +14,8 @@ Options:
           Authorization code found in the local storage of your browser (authToken...)
   -i, --instance <INSTANCE>
           Authentication instance [default: https://pipedapi.kavin.rocks]
+      --append
+          Append videos to existing playlists
   -h, --help
           Print help information
   -V, --version
