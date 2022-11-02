@@ -112,7 +112,7 @@ async fn main() -> Result<()> {
     }
 
     for error in errors {
-        println!("Unable to add {} in {} : {}", error.0, error.1, error.2);
+        eprintln!("Unable to add {} in ({}) : {}", error.1, error.0, error.2);
     }
 
     Ok(())
