@@ -1,5 +1,7 @@
 use thiserror::Error;
 
+use crate::piped;
+
 #[derive(Error, Debug)]
 pub enum PipedPlaylistImporterError {
     #[error("Unable to parse the filename for {0}")]
@@ -16,6 +18,9 @@ pub enum PipedPlaylistImporterError {
 
     #[error("Unable to deserialize : {0}")]
     Deserialize(#[from] serde_json::Error),
+
+    #[error("Video not found {0}")]
+    PipedError(piped::PipedErrorResponse),
 
     #[error("Unable contact '{1}' : {0}")]
     ContactApi(#[source] reqwest::Error, String),

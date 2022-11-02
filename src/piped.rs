@@ -89,11 +89,18 @@ impl PipedClient {
             .map_err(|e| PipedPlaylistImporterError::ContactApi(e, url.to_owned()))?;
 
         if response.status() != 200 {
-            return Err(PipedPlaylistImporterError::Request(
-                response.status(),
-                url.to_owned(),
-                response.text().await?,
-            ));
+            let status = response.status();
+            let text = response.text().await?;
+            match serde_json::from_str::<PipedErrorResponse>(&text) {
+                Ok(r) => return Err(PipedPlaylistImporterError::PipedError(r)),
+                Err(_) => {
+                    return Err(PipedPlaylistImporterError::Request(
+                        status,
+                        url.to_owned(),
+                        text,
+                    ))
+                }
+            }
         }
 
         Ok(response
@@ -143,4 +150,15 @@ pub struct PipedCreatePlaylistResponse {
 #[derive(Debug, Deserialize)]
 pub struct PipedAddVideoToPlaylistResponse {
     pub message: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PipedErrorResponse {
+    pub message: String,
+}
+
+impl std::fmt::Display for PipedErrorResponse {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.message)
+    }
 }

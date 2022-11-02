@@ -3,6 +3,7 @@ use anyhow::{Context, Result};
 use clap::Parser;
 
 mod error;
+use error::*;
 
 mod piped;
 use piped::*;
@@ -41,7 +42,7 @@ async fn main() -> Result<()> {
         .iter()
         .for_each(|playlist| global_count += playlist.urls.len());
 
-    let mut errors: Vec<(String, String)> = vec![];
+    let mut errors: Vec<(String, String, String)> = vec![];
 
     let mut count = 0;
     for playlist in playlists {
@@ -57,7 +58,20 @@ async fn main() -> Result<()> {
         for video in playlist.urls {
             let video_id = video.split('=').nth(1).unwrap();
 
-            let response = client.add_video_to_playlist(video_id, playlist_id).await?;
+            let response = match client.add_video_to_playlist(video_id, playlist_id).await {
+                Ok(r) => r,
+                Err(e) => match e {
+                    PipedPlaylistImporterError::PipedError(e) => {
+                        println!(
+                            "({}/{}) Error while adding {} to {} ({}): {}",
+                            count, global_count, video_id, playlist.name, playlist_id, e.message
+                        );
+                        errors.push((playlist_id.to_owned(), video_id.to_owned(), e.message));
+                        continue;
+                    }
+                    _ => return Err(e.into()),
+                },
+            };
 
             count += 1;
             if response.message == "ok" {
@@ -70,13 +84,13 @@ async fn main() -> Result<()> {
                     "({}/{}) Error while adding {} to {} ({})",
                     count, global_count, video_id, playlist.name, playlist_id
                 );
-                errors.push((playlist_id.to_owned(), video_id.to_owned()));
+                errors.push((playlist_id.to_owned(), video_id.to_owned(), "".to_owned()));
             }
         }
     }
 
     for error in errors {
-        println!("Unable to add {} in {}", error.0, error.1);
+        println!("Unable to add {} in {} : {}", error.0, error.1, error.2);
     }
 
     Ok(())
